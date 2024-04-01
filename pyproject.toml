@@ -1,0 +1,102 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "close-dot-io"
+dynamic = ["version"]
+description = 'Easy interface to work with the Close.io API.'
+readme = "README.md"
+requires-python = ">=3.8"
+
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Copyfactory", email = "dev@copyfactory.io" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = ["pydantic[email]>=2.5.2", "pydantic_extra_types", "requests", "pycountry"]
+
+[project.urls]
+Documentation = "https://github.com/unknown/close_dot_io#readme"
+Issues = "https://github.com/unknown/close_dot_io/issues"
+Source = "https://github.com/unknown/close_dot_io"
+
+[tool.hatch.version]
+path = "src/close_dot_io/__about__.py"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "coverage[toml]>=6.5",
+  "pytest",
+]
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report",
+]
+cov = [
+  "test-cov",
+  "cov-report",
+]
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+[tool.hatch.envs.types]
+dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/close_dot_io tests}"
+
+[tool.coverage.run]
+source_pkgs = ["close_dot_io", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/close_dot_io/__about__.py",
+]
+
+[tool.coverage.paths]
+close_dot_io = ["src/close_dot_io", "*/close_dot_io/src/close_dot_io"]
+tests = ["tests", "*/close_dot_io/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "W191",  # indentation contains tabs
+]
+
+[tool.ruff.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
