@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseResourceModel(BaseModel):
@@ -8,6 +8,8 @@ class BaseResourceModel(BaseModel):
     organization_id: str | None = None
     date_updated: datetime | None = None
     date_created: datetime | None = None
+
+    model_config = ConfigDict(populate_by_name=True)
 
     def to_close_object(self, fields_to_exclude: set = None):
         default_exclude = {"date_updated", "date_created"}
