@@ -33,3 +33,16 @@ class Contact(BaseResourceModel):
         if len(self.emails) > 0:
             return str(self.emails[0].email)
         return ""
+
+    def add_email(
+        self,
+        email: EmailStr,
+        email_type: ContactEmailOrPhoneTypeEnum = ContactEmailOrPhoneTypeEnum.OFFICE,
+        is_unsubscribed: bool = False,
+    ):
+        self.emails.append(
+            ContactEmailAddress(
+                email=email, type=email_type, is_unsubscribed=is_unsubscribed
+            )
+        )
+        return self.emails

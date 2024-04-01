@@ -107,7 +107,6 @@ class CloseClient:
         q = {"_fields": {}}
         if include_lead:
             lead_fields = self.lead_model.model_fields
-            lead_fields.pop("contacts", None)
             q["_fields"]["lead"] = list(lead_fields.keys()) + ["custom"]
 
         if include_contact:
