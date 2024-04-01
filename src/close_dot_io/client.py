@@ -2,7 +2,7 @@ import re
 import time
 
 import requests
-from pydantic import ValidationError
+from pydantic import ValidationError, create_model
 
 from .resources import BaseResourceModel, Contact, Lead
 
@@ -199,8 +199,14 @@ class CloseClient:
         swapped_to_lead = False
         # check if trying to create direct Contact, if so make Lead.
         if base_resource == Contact and resource.id is None and lead_id is None:
+            # gen Lead model using Contact field schema.
+            dynamic_lead_model = create_model(
+                "Lead",
+                contacts=(list[resource], None),
+                __base__=Lead,
+            )
             swapped_to_lead = True
-            resource = Lead.create_from_contact(contact=resource)
+            resource = dynamic_lead_model.create_from_contact(contact=resource)
         endpoint = self.resource_to_endpoint(resource=resource, resource_id=resource.id)
         method = "PUT" if resource.id else "POST"
         data = resource.to_close_object()
