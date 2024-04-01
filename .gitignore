@@ -1,0 +1,41 @@
+# Virtual environments
+env/
+env3*/
+venv/
+.venv/
+__pypackages__/
+
+# IDEs and editors
+.idea/
+.vscode/
+
+# Package distribution and build files
+*.egg-info/
+dist/
+/build/
+_build/
+
+# Python bytecode and cache files
+*.py[cod]
+.cache/
+/.ghtopdep_cache/
+.hypothesis
+.mypy_cache/
+.pytest_cache/
+/.ruff_cache/
+
+
+# Documentation files
+/docs/changelog.md
+/docs/theme/mkdocs_run_deps.html
+/site/
+/site.zip
+
+
+# Other files and folders
+.python-version
+.DS_Store
+.auto-format
+/sandbox/
+/worktrees/
+.pdm-python
