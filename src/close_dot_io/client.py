@@ -176,8 +176,8 @@ class CloseClient:
         for item in self.run_pagination(
             self.resource_to_endpoint(resource), max_results=max_results
         ):
-            if account := self.get_resource_or_none(resource=resource, data=item):
-                items.append(account)
+            if item := self.get_resource_or_none(resource=resource, data=item):
+                items.append(item)
         return items
 
     def get(self, resource, resource_id: str = None, resource_instance=None):
