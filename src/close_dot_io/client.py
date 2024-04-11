@@ -5,6 +5,7 @@ import requests
 from pydantic import ValidationError, create_model
 
 from .resources import BaseResourceModel, Contact, Lead
+from .resources.activity import BaseActivity
 
 MAX_RETRY = 5
 
@@ -49,7 +50,8 @@ class CloseClient:
     def get_base_model(self, model):
         """
         Keep checking model inheritance until we hit the model that is directly above
-        'BaseResourceModel' as this is what we use to build the resource endpoint route.
+        'BaseResourceModel' or 'BaseActivity' as this is what we use
+        to build the resource endpoint route.
 
         This allows for deep inheritance of Lead/Contact/Oppertunity models.
         :param model:
@@ -67,7 +69,7 @@ class CloseClient:
             if last_class:
                 if isinstance(last_class, tuple):
                     last_class = last_class[0]
-            if last_class == BaseResourceModel:
+            if last_class in [BaseResourceModel, BaseActivity]:
                 class_found = True
             else:
                 model = last_class
@@ -79,6 +81,9 @@ class CloseClient:
     def resource_to_endpoint(self, resource, resource_id=None):
         base_model = self.get_base_model(model=resource)
         snake_case = CAMEL_CASE_PATTERN.sub("_", base_model.__name__).lower()
+        if snake_case.endswith("_activity"):
+            activity_object = snake_case[: snake_case.index("_activity")]
+            snake_case = f"activity/{activity_object}"
         return f"{snake_case}/{resource_id}" if resource_id else snake_case
 
     def dispatch(self, endpoint, method="GET", params=None, json_data=None):
