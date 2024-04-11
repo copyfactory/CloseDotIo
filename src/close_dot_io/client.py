@@ -1,5 +1,6 @@
 import re
 import time
+from urllib.parse import urlencode
 
 import requests
 from pydantic import ValidationError, create_model
@@ -119,21 +120,25 @@ class CloseClient:
             q["_fields"]["contact"] = list(contact_fields.keys()) + ["custom"]
         return q
 
-    def run_pagination(self, resource, max_results: int = 100):
+    def run_pagination(self, resource, max_results: int = 100, url_params: dict = None):
         items = []
+        url_params = url_params or {}
         limit = 100
-        url = f"{resource}/?_skip={len(items)}&_limit={limit}"
-        res = self.dispatch(endpoint=url)
-        items += res.get("data", [])
-        has_more = res.get("has_more", False)
-        if has_more:
-            while not len(items) >= max_results:
-                url = f"{resource}/?_skip={len(items)}&_limit={limit}"
-                res = self.dispatch(endpoint=url)
-                items += res.get("data", [])
-                has_more = res.get("has_more", False)
-                if not has_more:
-                    break
+
+        def fetch_data(new_url):
+            res = self.dispatch(endpoint=new_url)
+            items.extend(res.get("data", []))
+            return res.get("has_more", False)
+
+        while len(items) < max_results:
+            encoded_params = urlencode(
+                url_params | {"_skip": len(items), "_limit": limit}
+            )
+            url = f"{resource}/?{encoded_params}"
+            has_more = fetch_data(url)
+            if not has_more:
+                break
+
         return items[:max_results]
 
     def run_query(self, query: dict, max_results: int):
@@ -176,10 +181,12 @@ class CloseClient:
                 leads.append(lead)
         return leads
 
-    def list(self, resource, max_results: int = 100):
+    def list(self, resource, max_results: int = 100, url_params: dict = None):
         items = []
         for item in self.run_pagination(
-            self.resource_to_endpoint(resource), max_results=max_results
+            self.resource_to_endpoint(resource),
+            max_results=max_results,
+            url_params=url_params,
         ):
             if item := self.get_resource_or_none(resource=resource, data=item):
                 items.append(item)
