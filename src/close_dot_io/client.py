@@ -1,10 +1,12 @@
 import re
 import time
+from typing import Literal
 from urllib.parse import urlencode
 
 import requests
 from pydantic import ValidationError, create_model
 
+from . import SmartView
 from .resources import BaseResourceModel, Contact, Lead
 from .resources.activity import BaseActivity
 
@@ -180,6 +182,35 @@ class CloseClient:
             if lead := self.get_resource_or_none(resource=self.lead_model, data=lead):
                 leads.append(lead)
         return leads
+
+    def get_from_smartview(
+        self,
+        smartview_name: str = None,
+        smartview_id: str = None,
+        max_results: int = 100,
+        resource: Literal["contact", "lead"] = None,
+    ):
+        if not smartview_name and not smartview_id:
+            raise ValueError("One of smartview name or ID is required.")
+        q, q_type = {}, None
+        if smartview_id:
+            sv: SmartView = self.get(resource=SmartView, resource_id=smartview_id)
+            if not sv:
+                raise ValueError(f"SmartView '{smartview_id}' was not found.")
+            q, q_type = sv.s_query, sv.type
+        if not q:
+            params = {"type": resource} if resource else {"type__in": "lead,contact"}
+            svs: list[SmartView] = self.list(resource=SmartView, url_params=params)
+            for smart_view in svs:
+                if smart_view.name == smartview_name:
+                    q, q_type = smart_view.s_query, smart_view.type
+                    break
+        if not q:
+            raise ValueError(f"SmartView '{smartview_name}' was not found.")
+        query = q.model_dump(mode="json")
+        if q_type == "lead":
+            return self.get_leads(query=query, max_results=max_results)
+        return self.get_contacts(query=query, max_results=max_results)
 
     def list(self, resource, max_results: int = 100, url_params: dict = None):
         items = []

@@ -15,3 +15,4 @@ from .activity import (  # noqa
     SMSActivity,
     TaskCompletedActivity,
 )
+from .smart_view import SmartView  # noqa
