@@ -1,7 +1,7 @@
 # Close[.]io
 
-[![PyPI - Version](https://img.shields.io/pypi/v/close-dot-io.svg)](https://pypi.org/project/close-io-flows)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/close-dot-io.svg)](https://pypi.org/project/close-io-flows)
+[![PyPI - Version](https://img.shields.io/pypi/v/close-dot-io.svg)](https://pypi.org/project/close-dot-io)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/close-dot-io.svg)](https://pypi.org/project/close-dot-io)
 
 -----
 
