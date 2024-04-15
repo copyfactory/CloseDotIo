@@ -260,6 +260,11 @@ client.save(new_lead)
 ```
 
 
+> Huge thank you to the Close team for creating a best-in-class product and API!
+
+Close API documentation: https://developer.close.com/
+
+
 ## License
 
 `close-dot-io` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
