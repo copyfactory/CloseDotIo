@@ -12,7 +12,8 @@ class BaseResourceModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     def to_close_object(self, fields_to_exclude: set = None):
-        default_exclude = {"date_updated", "date_created"}
+        # Exclude status label since we always set the preferred ID.
+        default_exclude = {"date_updated", "date_created", "status_label"}
         if fields_to_exclude:
             default_exclude.update(fields_to_exclude)
         return self.model_dump(

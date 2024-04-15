@@ -31,6 +31,8 @@ class CloseClient:
         self.lead_model = lead_model
         self.model_depth = model_depth
 
+        self.lead_statuses: dict = {}
+
     @staticmethod
     def _get_rate_limit_sleep_time(response):
         """Get rate limit window expiration time from response if the response
@@ -42,13 +44,18 @@ class CloseClient:
         except (AttributeError, KeyError, ValueError, Exception):
             return 60
 
-    @staticmethod
-    def get_resource_or_none(resource, data: dict):
+    def get_resource_or_none(self, resource, data: dict):
         try:
-            return resource(**data)
+            return resource(**data | {"lead_statuses": self.lead_statuses})
         except ValidationError:
             # todo log?
             return None
+
+    def set_lead_statuses(self):
+        if self.lead_statuses:
+            return
+        res = self.dispatch(endpoint="/status/lead/").get("data")
+        self.lead_statuses = {status.get("label"): status.get("id") for status in res}
 
     def get_base_model(self, model):
         """
@@ -61,6 +68,9 @@ class CloseClient:
         :param max_depth:
         :return:
         """
+        # fetch the status IDs once.
+        if not self.lead_statuses:
+            self.set_lead_statuses()
         class_found = False
         recur_count = 0
         while not class_found:
@@ -251,6 +261,8 @@ class CloseClient:
             resource = dynamic_lead_model.create_from_contact(contact=resource)
         endpoint = self.resource_to_endpoint(resource=resource, resource_id=resource.id)
         method = "PUT" if resource.id else "POST"
+        if base_resource == Lead:
+            resource.lead_statuses = self.lead_statuses
         data = resource.to_close_object()
         if lead_id:
             data["lead_id"] = lead_id
