@@ -34,3 +34,9 @@ class Lead(BaseResourceModel):
             return None
         if self.status_label in self.lead_statuses:
             return self.lead_statuses[self.status_label]
+
+    @classmethod
+    def get_contact_type(cls):
+        # Get the 'Contact' type from the Lead.
+        contact_resource = cls.__annotations__["contacts"]
+        return contact_resource.__args__[0]
