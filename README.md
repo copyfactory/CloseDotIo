@@ -26,6 +26,12 @@ pip install close-dot-io
 
 ## Basic Usage
 
+All methods will ask for which resource you are looking to interact with.
+
+The `Lead` and `Contact` resource can be subclassed to add your own custom fields and logic.
+
+Further down is an example of how to do that.
+
 #### Getting a list of a resource
 
 ```python
@@ -34,13 +40,11 @@ from close_dot_io import CloseClient, Lead
 CLOSE_API_KEY = "MY-KEY-HERE"
 
 # Create a connection to Close.
-client = CloseClient(
-    api_key=CLOSE_API_KEY
-)
+client = CloseClient(api_key=CLOSE_API_KEY)
 
 # Get 200 leads.
 # You get a list of 'Lead' object with the expected Python data types.
-leads:list[Lead] = client.list(resource=Lead, max_results=200)
+leads = client.list(resource=Lead, max_results=200)
 
 print(leads)
 # > [
@@ -79,6 +83,7 @@ print(leads)
 
 
 # Get the first leads ID.
+# All `Lead` fields will autocomplete in your IDE.
 first_lead = leads[0].id
 
 # Iterate over leads and contacts
@@ -112,19 +117,17 @@ from close_dot_io import (
 #### Getting a list of leads based on a smartview.
 
 ```python
-from close_dot_io import CloseClient
+from close_dot_io import CloseClient,Lead
 
 CLOSE_API_KEY = "MY-KEY-HERE"
 
 # Create a connection to Close.
-client = CloseClient(
-    api_key=CLOSE_API_KEY
-)
+client = CloseClient(api_key=CLOSE_API_KEY)
 # By id
-leads = client.get_from_smartview(smartview_id="save_xxx", max_results=10)
+leads = client.get_from_smartview(resource=Lead, smartview_id="save_xxx", max_results=10)
 
 # Or search by name (slower since we need to fetch the smartviews to grab the ID)
-leads = client.get_from_smartview(smartview_name="People to follow up with", max_results=10)
+leads = client.get_from_smartview(resource=Lead, smartview_name="People to follow up with", max_results=1000)
 
 ```
 
@@ -136,9 +139,7 @@ from close_dot_io import CloseClient, Contact, Lead
 CLOSE_API_KEY = "MY-KEY-HERE"
 
 # Create a connection to Close.
-client = CloseClient(
-    api_key=CLOSE_API_KEY
-)
+client = CloseClient(api_key=CLOSE_API_KEY)
 
 # Create using only an Email.
 new_contact = Contact.create_from_email(email="j@acme.com", title='CEO')
@@ -179,6 +180,7 @@ Here is how to do that.
 
 Under the hood [Pydantic](https://docs.pydantic.dev/) is used to validate models and type annotations.
 
+
 ```python
 from close_dot_io import Contact, Lead, CloseClient
 from pydantic import Field
@@ -186,12 +188,14 @@ from enum import Enum
 
 # Subclass the base Contact object
 class MyCustomContact(Contact):
-    # The name can be anything you want.
+    # The field name can be anything you want.
     # The only required steps are to (1) set the 'alias' parameter with the custom field ID.
     # and (2) set a type annotation to the field.
     # You can copy the ID in the Close custom field settings.
     # **Important** you must prefix the custom field ID with 'custom.{my-id}'
     # Its recommended to set the default to None since your field is likely optional.
+    # If you don't set a default and ask for a Contact that doesn't have that field the model will not be created
+    # since it would be deemed invalid.
     some_custom_field: str | None = Field(
         alias="custom.cf_xxx",
         default=None,
@@ -246,16 +250,20 @@ new_lead = CustomLead.create_from_contact(
 
 CLOSE_API_KEY = "MY-KEY-HERE"
 
-# To save you need to bind your custom Contact and Lead models to the client.
-# Now whenever you ask for Leads or Contacts
-# you will get the bound object returned with all the custom fields automatically transposed.
-client = CloseClient(
-    api_key=CLOSE_API_KEY,
-    contact_model=PostCustomerContactModel,
-    lead_model=CustomLead
-)
+client = CloseClient(api_key=CLOSE_API_KEY)
 
+# Save the new lead with our custom fields
 client.save(new_lead)
+
+# Fetch Leads from a smartview using the custom Resource.
+leads = client.get_from_smartview(
+    resource=CustomLead,
+    smartview_name="People to follow up with",
+    max_results=10
+)
+# We now have lead score!
+print(leads[0].lead_score)
+
 
 ```
 
