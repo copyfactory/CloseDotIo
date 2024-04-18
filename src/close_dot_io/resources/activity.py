@@ -20,7 +20,7 @@ class ActivityTypeEnum(Enum):
 
 
 class DirectionEnum(Enum):
-    INBOUND = "inbound"
+    INBOUND = "incoming"
     OUTBOUND = "outgoing"
 
 
@@ -60,11 +60,11 @@ class EmailEnvelope(BaseModel):
     sent_from: list[EmailEnvelopeEntry] = Field(alias="from")
     sender: list[EmailEnvelopeEntry]
     to: list[EmailEnvelopeEntry]
-    cc: list[str] = []
+    cc: list[EmailEnvelopeEntry] | list[str] = []
     bcc: list[str] = []
-    reply_to: list[str] = []
+    reply_to: list[EmailEnvelopeEntry] | list[str] = []
     date: str
-    in_reply_to: str | None = None
+    in_reply_to: list[EmailEnvelopeEntry] | str | None = None
     message_id: str
     subject: str
 
