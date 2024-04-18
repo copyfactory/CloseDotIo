@@ -234,6 +234,9 @@ class PostCustomerContactModel(MyCustomContact):
 # Same exact logic applies to a Lead.
 class CustomLead(Lead):
     lead_score: int | None = Field(alias="custom.cf_xxx", default=None)
+    # Set the type of contacts you want
+    # to have a full Lead representation.
+    contacts: list[PostCustomerContactModel] = []
 
 # Now you just create these as you would any other object.
 new_contact = PostCustomerContactModel.create_from_email(
