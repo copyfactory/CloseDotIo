@@ -16,3 +16,4 @@ from .activity import (  # noqa
     TaskCompletedActivity,
 )
 from .smart_view import SmartView  # noqa
+from .opportunity import Opportunity  # noqa
