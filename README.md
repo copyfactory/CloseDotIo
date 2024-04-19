@@ -64,6 +64,7 @@ print(leads)
 #           date_created=datetime.datetime(2024, 2, 29, 11, 3, 12, 557000, tzinfo=TzInfo(UTC)),
 #           name='Eric Morris',
 #           title='co-founder',
+#           opportunities=[],
 #           phones=[
 #               ContactPhoneNumber(
 #                   country='CA',
@@ -99,6 +100,7 @@ Currently supported resources are:
 from close_dot_io import (
     Lead,
     Contact,
+    Opportunity,
     ConnectedAccount,
     Sequence,
     CallActivity,
@@ -111,7 +113,7 @@ from close_dot_io import (
     OpportunityStatusChangeActivity,
     SMSActivity,
     TaskCompletedActivity,
-    SmartView
+    SmartView,
 )
 ```
 #### Getting a list of leads based on a smartview.
@@ -270,6 +272,98 @@ print(leads[0].lead_score)
 
 ```
 
+#### Working with Opportunities
+
+Opportunities behave like any other resource and also has support for custom fields.
+
+```python
+from close_dot_io import Opportunity
+from pydantic import Field
+
+
+class CustomOpportunity(Opportunity):
+    my_custom_opp_field:str | None = Field(default=None, alias="custom.cf_xxx")
+
+```
+
+Extending the custom lead example from earlier we can set our CustomOpportunity class
+so that whenever we fetch or interact with the Close API this is the model we are working with.
+
+```python
+from close_dot_io import Opportunity, Lead, CloseClient
+from pydantic import Field
+
+class CustomLead(Lead):
+    lead_score: int | None = Field(alias="custom.cf_xxx", default=None)
+    # Set the type of opportunities you want
+    # to have a full Lead representation.
+    opportunities: list[CustomOpportunity] = []
+
+```
+Just like contacts, opportunities are automatically saved when updating a Lead in the Close API.
+
+Adding and updating a new opportunity to a lead.
+```python
+CLOSE_API_KEY = "MY-KEY-HERE"
+
+client = CloseClient(api_key=CLOSE_API_KEY)
+
+# First get an instance of a Lead
+lead = client.get(resource=CustomLead, resource_id="lead_xxx")
+
+# Update the note of the first opportunity
+lead.opportunities[0].note = "Updated note from the API"
+
+# Now create your opportunity
+my_opp_data = {
+    "note": "i hope this deal closes...",
+    "confidence": 90,
+    "lead_id": lead.id,
+    "value_period": "monthly",
+    "status": "Active",
+    "value": 500,
+    "my_custom_opp_field": "My custom value"
+}
+new_opp = CustomOpportunity(**my_opp_data)
+
+# Add the opportunity to the lead
+lead.opportunities.append(new_opp)
+
+# Save it
+client.save(lead)
+```
+
+Deleting all opportunities on a lead.
+```python
+CLOSE_API_KEY = "MY-KEY-HERE"
+
+client = CloseClient(api_key=CLOSE_API_KEY)
+
+# First get an instance of a Lead
+lead = client.get(resource=CustomLead, resource_id="lead_xxx")
+
+# Set the opportunities to an empty list.
+lead.opportunities = []
+
+# Save it
+client.save(lead)
+```
+
+Deleting all opportunities on a lead that are closed-lost
+```python
+CLOSE_API_KEY = "MY-KEY-HERE"
+
+client = CloseClient(api_key=CLOSE_API_KEY)
+
+# First get an instance of a Lead
+lead = client.get(resource=CustomLead, resource_id="lead_xxx")
+
+# Set the opportunities to only ones that are not closed lost.
+lead.opportunities = [opp for opp in lead.opportunities if not opp.is_lost]
+
+# Save it
+client.save(lead)
+```
 
 > Huge thank you to the Close team for creating a best-in-class product and API!
 
