@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 import requests
 from pydantic import ValidationError, create_model
 
-from .resources import BaseResourceModel, Contact, Lead, SmartView
+from .resources import BaseResourceModel, Contact, Lead, Opportunity, SmartView
 from .resources.activity import BaseActivity
 
 MAX_RETRY = 5
@@ -30,6 +30,7 @@ class CloseClient:
         self.model_depth = model_depth
 
         self.lead_statuses: dict = {}
+        self.opportunity_statuses: dict = {}
 
     @staticmethod
     def get_model_fields_for_query(
@@ -58,10 +59,24 @@ class CloseClient:
 
     def get_resource_or_none(self, resource: Type[R], data: dict) -> R | None:
         try:
-            return resource(**data | {"lead_statuses": self.lead_statuses})
+            return resource(
+                **data
+                | {
+                    "lead_statuses": self.lead_statuses,
+                    "opportunity_statuses": self.opportunity_statuses,
+                }
+            )
         except ValidationError:
             # todo log?
             return None
+
+    def set_opportunity_statuses(self):
+        if self.opportunity_statuses:
+            return
+        res = self.dispatch(endpoint="/status/opportunity/").get("data")
+        self.opportunity_statuses = {
+            status.get("label"): status.get("id") for status in res
+        }
 
     def set_lead_statuses(self):
         if self.lead_statuses:
@@ -81,6 +96,8 @@ class CloseClient:
         :return:
         """
         # fetch the status IDs once.
+        if not self.opportunity_statuses:
+            self.set_opportunity_statuses()
         if not self.lead_statuses:
             self.set_lead_statuses()
         class_found = False
@@ -301,6 +318,22 @@ class CloseClient:
         method = "PUT" if resource.id else "POST"
         if base_resource == Lead:
             resource.lead_statuses = self.lead_statuses
+            # if Lead we also need to save the opps if they have changed or are new.
+            # Any ids remaining in the list should be deleted since they are no longer on the lead.
+            current_opps = resource._opp_ids_on_init
+            for opp in resource.opportunities:
+                if opp.id and opp.id in current_opps:
+                    current_opps.remove(opp.id)
+                # if no ID we can save since we know its new.
+                # if initial content hash is not the same model has changed so we can save as well.
+                if not opp.id or opp.resource_hash != opp._initial_hash:
+                    self.save(resource=opp)
+
+            for opp_to_delete in current_opps:
+                self.dispatch(endpoint=f"/opportunity/{opp_to_delete}", method="DELETE")
+
+        if base_resource == Opportunity:
+            resource.opportunity_statuses = self.opportunity_statuses
         data = resource.to_close_object()
         if lead_id:
             data["lead_id"] = lead_id

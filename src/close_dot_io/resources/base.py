@@ -1,6 +1,14 @@
+import hashlib
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
+
+EXPORT_CONFIG = {
+    "exclude_none": True,
+    "by_alias": True,
+    # Exclude status label since we always set the preferred ID.
+    "exclude": {"date_updated", "date_created", "status_label"},
+}
 
 
 class BaseResourceModel(BaseModel):
@@ -11,11 +19,16 @@ class BaseResourceModel(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    def to_close_object(self, fields_to_exclude: set = None):
-        # Exclude status label since we always set the preferred ID.
-        default_exclude = {"date_updated", "date_created", "status_label"}
-        if fields_to_exclude:
-            default_exclude.update(fields_to_exclude)
-        return self.model_dump(
-            mode="json", by_alias=True, exclude_none=True, exclude=default_exclude
+    @property
+    def resource_hash(self):
+        return (
+            hashlib.md5(self.model_dump_json(**EXPORT_CONFIG).encode("utf-8"))
+            .digest()
+            .hex()
         )
+
+    def to_close_object(self, fields_to_exclude: set = None):
+        config = EXPORT_CONFIG
+        if fields_to_exclude:
+            config["exclude"].update(fields_to_exclude)
+        return self.model_dump(mode="json", **config)

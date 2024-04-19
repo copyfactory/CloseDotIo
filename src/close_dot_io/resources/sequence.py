@@ -1,16 +1,7 @@
-from enum import Enum
-
 from pydantic import BaseModel
 
+from ..enums import SequenceStatusEnum
 from .base import BaseResourceModel
-
-
-class SequenceStatusEnum(Enum):
-    ACTIVE = "active"
-    ERROR = "error"
-    FINISHED = "finished"
-    GOAL = "goal"
-    PAUSED = "paused"
 
 
 class SubscriptionCountByStatus(BaseModel):

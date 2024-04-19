@@ -1,27 +1,14 @@
 from datetime import datetime
-from enum import Enum
 
 from pydantic import AnyUrl, BaseModel, Field
 
+from ..enums import (
+    ActivityDirectionEnum,
+    ActivityMeetingAttendeeStatusEnum,
+    ActivityMeetingStatusEnum,
+    ActivityTypeEnum,
+)
 from .base import BaseResourceModel
-
-
-class ActivityTypeEnum(Enum):
-    CALL = "Call"
-    CREATED = "Created"
-    EMAIL = "Email"
-    EMAIL_THREAD = "EmailThread"
-    LEAD_STATUS_CHANGE = "LeadStatusChange"
-    MEETING = "Meeting"
-    NOTE = "Note"
-    OPPORTUNITY_STATUS_CHANGE = "OpportunityStatusChange"
-    SMS = "SMS"
-    TASK_COMPLETED = "TaskCompleted"
-
-
-class DirectionEnum(Enum):
-    INBOUND = "incoming"
-    OUTBOUND = "outgoing"
 
 
 class BaseActivity(BaseResourceModel):
@@ -33,7 +20,7 @@ class CallActivity(BaseActivity):
     recording_url: AnyUrl | None = None
     voicemail_url: AnyUrl | None = None
     voicemail_duration: int | None = None
-    direction: DirectionEnum = DirectionEnum.OUTBOUND
+    direction: ActivityDirectionEnum = ActivityDirectionEnum.OUTBOUND
     disposition: str
     source: str
     note_html: str | None = None
@@ -78,7 +65,7 @@ class AttachmentEntry(BaseModel):
 
 class EmailActivity(BaseActivity):
     contact_id: str | None = None
-    direction: DirectionEnum
+    direction: ActivityDirectionEnum
     sender: str
     to: list[str]
     cc: list[str] = []
@@ -112,24 +99,10 @@ class LeadStatusChangeActivity(BaseActivity):
     old_status_label: str | None = None
 
 
-class MeetingStatusEnum(Enum):
-    UPCOMING = "upcoming"
-    IN_PROGRESS = "in-progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-    DECLINED_BY_LEAD = "declined-by-lead"
-    DECLINED_BY_ORG = "declined-by-org"
-
-
-class AttendeeStatusEnum(Enum):
-    NO_REPLY = "noreply"
-    YES = "yes"
-    NO = "no"
-    MAYBE = "maybe"
-
-
 class MeetingAttendee(BaseModel):
-    status: AttendeeStatusEnum = AttendeeStatusEnum.NO_REPLY
+    status: (
+        ActivityMeetingAttendeeStatusEnum
+    ) = ActivityMeetingAttendeeStatusEnum.NO_REPLY
     user_id: str | None = None
     name: str | None = None
     contact_id: str | None = None
@@ -143,7 +116,7 @@ class MeetingActivity(BaseActivity):
     note: str | None = None
     source: str | None = None
     location: AnyUrl | str = None
-    status: MeetingStatusEnum = MeetingStatusEnum.UPCOMING
+    status: ActivityMeetingStatusEnum = ActivityMeetingStatusEnum.UPCOMING
     contact_id: str | None = None
     duration: int | None = None
     attendees: list[MeetingAttendee] = []
@@ -177,7 +150,7 @@ class OpportunityStatusChangeActivity(BaseActivity):
 
 class SMSActivity(BaseActivity):
     date_sent: datetime | None = None
-    direction: DirectionEnum = DirectionEnum.OUTBOUND
+    direction: ActivityDirectionEnum = ActivityDirectionEnum.OUTBOUND
     status: str | None = None
     cost: str | None = None
     local_phone: str | None = None
