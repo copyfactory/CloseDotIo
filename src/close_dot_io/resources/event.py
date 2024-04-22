@@ -20,3 +20,8 @@ class Event(BaseResourceModel):
     data: dict | None = None
     previous_data: dict | None = None
     meta: Meta | None = Meta()
+
+
+class WebhookEvent(BaseModel):
+    subscription_id: str
+    event: Event
