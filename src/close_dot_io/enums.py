@@ -71,3 +71,107 @@ class ActivityMeetingAttendeeStatusEnum(Enum):
     YES = "yes"
     NO = "no"
     MAYBE = "maybe"
+
+
+class WebhookStatusEnum(Enum):
+    ACTIVE = "active"
+    PAUSED = "paused"
+
+
+class WebhookFilterTypeEnum(Enum):
+    EQUALS = "equals"
+    NOT_EQUALS = "not_equals"
+    IS_NULL = "is_null"
+    NON_NULL = "non_null"
+    CONTAINS = "contains"
+    AND = "and"
+    OR = "or"
+    NOT = "not"
+    FIELD_ACCESSOR = "field_accessor"
+    ANY_ARRAY_VALUE = "any_array_value"
+
+
+class DefaultActions(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+
+
+class LeadWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+    MERGED = "merged"
+
+
+class TaskWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+    COMPLETED = "completed"
+
+
+class EmailOrSMSActivityWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+    SENT = "sent"
+
+
+class UnsubscribeEmailWebhookActionEnum(Enum):
+    CREATED = "created"
+    DELETED = "deleted"
+
+
+class CallActivityWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+    ANSWERED = "answered"
+    COMPLETED = "completed"
+
+
+class MeetingActivityWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+    SCHEDULED = "scheduled"
+    STARTED = "started"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class TaskCompletedWebhookActionEnum(Enum):
+    CREATED = "created"
+    DELETED = "deleted"
+
+
+class ImportWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    COMPLETED = "completed"
+    REVERTING = "reverting"
+    REVERTED = "reverted"
+
+
+class ExportWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    COMPLETED = "completed"
+
+
+class BulkActionWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
+    COMPLETED = "completed"
+    PAUSED = "paused"
+
+
+class MembershipWebhookActionEnum(Enum):
+    ACTIVATED = "activated"
+    DEACTIVATED = "deactivated"
+
+
+class SavedSearchWebhookActionEnum(Enum):
+    CREATED = "created"
+    UPDATED = "updated"
