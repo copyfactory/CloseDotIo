@@ -18,3 +18,4 @@ from .activity import (  # noqa
 from .smart_view import SmartView  # noqa
 from .opportunity import Opportunity  # noqa
 from .webhook import *  # noqa
+from .event import WebhookEvent, Event  # noqa
