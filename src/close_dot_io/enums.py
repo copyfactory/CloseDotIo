@@ -42,6 +42,7 @@ class ActivityTypeEnum(Enum):
     OPPORTUNITY_STATUS_CHANGE = "OpportunityStatusChange"
     SMS = "SMS"
     TASK_COMPLETED = "TaskCompleted"
+    CUSTOM = "CustomActivity"
 
 
 class ActivityDirectionEnum(Enum):
