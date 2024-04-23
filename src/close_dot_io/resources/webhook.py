@@ -21,7 +21,7 @@ from ..enums import (
     WebhookStatusEnum,
 )
 from .base import BaseResourceModel
-from .event import Event
+from .event import WebhookEvent
 
 
 class BasicWebhookFilter(BaseModel):
@@ -297,13 +297,15 @@ class Webhook(BaseResourceModel):
     url: AnyUrl
     verify_ssl: bool = True
     events: list[webhook_event_options]
+    signature_key: str | None = None
 
-    def get_callbacks(self, event: Event) -> list[partial]:
+    def get_callbacks(self, event: WebhookEvent) -> list[partial]:
         callbacks = []
+        event = event.event
         for registered_event in self.events:
             if (
                 registered_event.object_type == event.object_type
-                and registered_event.action == event.action
+                and registered_event.action.value == event.action
             ):
                 if not isinstance(registered_event.event_callback, list):
                     funcs = [registered_event.event_callback]
