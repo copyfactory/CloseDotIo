@@ -12,8 +12,16 @@ from .base import BaseResourceModel
 
 
 class BaseActivity(BaseResourceModel):
-    _type: ActivityTypeEnum
+    type: ActivityTypeEnum = Field(alias="_type")
     lead_id: str
+
+
+class CustomActivity(BaseActivity):
+    """
+    Subclass this model to create your own custom Activities.
+    """
+
+    pass
 
 
 class CallActivity(BaseActivity):
