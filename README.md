@@ -11,9 +11,22 @@ Features:
 
  - Automatic create or update of a resource.
  - Automatic schema creation for (most) Close resources with IDE autocomplete.
- - Extendable Lead and Contact model to match your Close custom fields.
+ - Extendable `Lead`, `Contact`, `Opportunity` and `Activity` model to match your Close custom fields.
  - Retry/rate-limit handling.
+ - Webhook validation and callbacks.
 
+<!-- TOC -->
+* [Close[.]io](#closeio)
+  * [Installation](#installation)
+  * [Basic Usage](#basic-usage)
+      * [Getting a list of a resource](#getting-a-list-of-a-resource)
+      * [Getting a list of leads based on a smartview.](#getting-a-list-of-leads-based-on-a-smartview)
+      * [Creating/Updating/Cloning a new contact/lead](#creatingupdatingcloning-a-new-contactlead)
+      * [Extending the Contact and Lead resource](#extending-the-contact-and-lead-resource)
+      * [Working with Opportunities](#working-with-opportunities)
+      * [Webhooks](#webhooks)
+  * [License](#license)
+<!-- TOC -->
 
 ## Installation
 
@@ -363,6 +376,149 @@ lead.opportunities = [opp for opp in lead.opportunities if not opp.is_lost]
 
 # Save it
 client.save(lead)
+```
+
+#### Webhooks
+
+Webhooks are at the core of all the sales automation we do. Here are some of the ways we use currently use them at Copyfactory:
+
+1. Classifying emails
+2. Updating lead and contact custom fields
+3. Automating enrollment into sequences
+4. Fetching product or user data from other APIs
+5. Delegating tasks to priority accounts
+
+This package simplifies the webhook experience by attaching callback functions to events you want to listen to.
+
+We use FastAPI but the process is similar for any other web framework.
+
+[All of the events](https://developer.close.com/resources/event-log/list-of-events/) from the
+Close event list are currently supported.
+
+For this example we are going to listen on new notes on a lead.
+
+```python
+from close_dot_io import (
+  NoteWebhookEvent, Webhook, Event, NoteActivity, BasicWebhookFilter,
+  CloseClient, Lead, WebhookFilter, WebhookFilterTypeEnum, FieldAccessorWebhookFilter
+)
+
+# all events follow the nomenclature of '{resource}WebhookEvent'
+# Check the documentation for the supported actions for that event. The default are 'created' 'updated' 'deleted'
+event = NoteWebhookEvent(action="created")
+
+# Extra filters are also supported depending on the granularity you need.
+extra_filter = WebhookFilter(
+        type=WebhookFilterTypeEnum.FIELD_ACCESSOR,
+        field="data",
+        filter=FieldAccessorWebhookFilter(
+          field=Lead.field("name"),
+            filter=BasicWebhookFilter(
+                type=WebhookFilterTypeEnum.EQUALS,
+                value="user_lAm7YqrzZj10t1GLK5eTOaRgPkaChswxydbhUhGRbbM"
+            )
+        )
+    )
+event_with_filter = NoteWebhookEvent(action="created", extra_filter=extra_filter)
+
+```
+
+On its own this is not very useful. Let's attach a function so that when this event occurs, we can run our custom logic.
+
+```python
+from close_dot_io import (
+  NoteWebhookEvent, Webhook, Event, NoteActivity, BasicWebhookFilter,
+  CloseClient, Lead, WebhookFilter, WebhookFilterTypeEnum, FieldAccessorWebhookFilter
+)
+
+CLOSE_API_KEY = "MY-KEY-HERE"
+
+client = CloseClient(api_key=CLOSE_API_KEY)
+
+# all functions (referred to as 'callbacks')  will receive an Event object which you can use.
+def handle_new_note(event: Event):
+  # With the event object we can create a partial NoteActivity
+  partial_note = NoteActivity(**event.data)
+  # We can iterate over the fields that changed
+  for field in event.changed_fields:
+    print(field)
+  # We can see the previous object
+  previous_note = NoteActivity(**event.previous_data)
+  # Finally if we need the full lead object we can of course fetch it using the API.
+  lead = client.get(resource=Lead, resource_id=event.lead_id)
+  # Or even the object that we received
+  note = client.get(resource=NoteActivity, resource_id=event.object_id)
+
+
+# Now all we need to do is attach the function to the event.
+event = NoteWebhookEvent(action="created", event_callback=[handle_new_note])
+
+# Next we create the webhook.
+wh = Webhook(url="{MY-DOMAIN-HERE}/process_close_webhook", events=[event])
+# **IMPORTANT** When you create the webhook you will receive a 'signature_key', copy that as it won't be shown again.
+# **IMPORTANT** You only need to create the webhook once!
+wh = client.save(resource=wh)
+print(wh.signature_key)
+
+```
+
+At this point we have:
+
+1. Defined the events we want to run logic against
+2. Created a webhook that Close will start sending those events to.
+3. Copied a `signature_key` and pasted it somewhere so that we can secure our endpoint.
+
+Next we need to connect our webframework to these events. The following example uses FastAPI and puts all the code
+together.
+
+```python
+from close_dot_io import (
+  NoteWebhookEvent, Webhook, Event, NoteActivity, BasicWebhookFilter,
+  CloseClient, Lead, WebhookFilter, WebhookFilterTypeEnum, FieldAccessorWebhookFilter, WebhookEvent
+)
+from close_dot_io.security import is_webhook_data_valid
+
+from typing import Annotated
+from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Header, Body
+import os
+
+CLOSE_API_KEY = "MY-KEY-HERE"
+
+
+# all functions (referred to as 'callbacks')  will receive an Event object which you can use.
+def handle_new_note(event: Event):
+    partial_note = NoteActivity(**event.data)
+    print(partial_note)
+
+# Now all we need to do is attach the function to the event.
+event = NoteWebhookEvent(action="created", event_callback=[handle_new_note])
+my_webhook = Webhook(url="{MY-DOMAIN-HERE}/process_close_webhook", events=[event])
+
+# Create a function to validate the incoming request. For FastAPI it would look like this.
+async def validate_close_signature(
+        close_sig_timestamp: Annotated[str, Header()], close_sig_hash: Annotated[str, Header()], event: Annotated[dict, Body()]
+):
+    if not is_webhook_data_valid(
+        close_sig_timestamp=close_sig_timestamp, close_sig_hash=close_sig_hash, payload=event,
+        # This is the signature key you copied when you first created the webhook. We store it in our .env file.
+        signature_key=os.environ["CLOSE_WEBHOOK_SIGNATURE_KEY"]
+    ):
+        raise HTTPException(status_code=422, detail="Webhook signature is not valid.")
+
+app = FastAPI()
+
+# Create the route which will always be a POST request with the payload being the WebhookEvent.
+# This example uses the FastAPI background tasks functionality to run our callbacks but you could easily
+# Pass this off to a message broker or worker process.
+@app.post("/process_close_webhook", dependencies=[Depends(validate_close_signature)])
+async def process_close_webhook(event: WebhookEvent, background_tasks: BackgroundTasks):
+    # The webhook has a method `get_callbacks` which returns a list of function partials that match the target
+    # event action and resource type.
+    callbacks = my_webhook.get_callbacks(event=event)
+    for callback in callbacks:
+        background_tasks.add_task(callback.func, *callback.args, **callback.keywords)
+    return {}
+
 ```
 
 > Huge thank you to the Close team for creating a best-in-class product and API!
