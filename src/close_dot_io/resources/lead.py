@@ -30,6 +30,7 @@ class Lead(BaseResourceModel):
 
     def model_post_init(self, __context: Any) -> None:
         if not self.opportunities:
+            self._opp_ids_on_init = set()
             return
         self._opp_ids_on_init = {opp.id for opp in self.opportunities if opp.id}
 
