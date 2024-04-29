@@ -10,13 +10,13 @@ from .base import BaseResourceModel
 class Opportunity(BaseResourceModel):
     status_type: OpportunityStatus = OpportunityStatus.ACTIVE
     lead_id: str
-    lead_name: str
+    lead_name: str | None = None
     contact_id: str | None = None
 
     confidence: int | None = None
-    status_label: str
-    pipeline_id: str
-    pipeline_name: str
+    status_label: str | None = None
+    pipeline_id: str | None = None
+    pipeline_name: str | None = None
 
     value: int | float | None = None
     value_period: OpportunityPeriod = OpportunityPeriod.ONE_TIME

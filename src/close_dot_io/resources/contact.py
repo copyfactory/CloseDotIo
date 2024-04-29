@@ -18,6 +18,7 @@ class ContactPhoneNumber(BaseModel):
 
 
 class Contact(BaseResourceModel):
+    lead_id: str | None = None
     name: str | None = None
     title: str | None = None
     phones: list[ContactPhoneNumber] = []
