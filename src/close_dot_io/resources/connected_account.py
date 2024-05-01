@@ -10,6 +10,7 @@ class ConnectedAccountIdentify(BaseModel):
 
 
 class ConnectedAccount(BaseResourceModel):
-    identities: list[ConnectedAccountIdentify]
-    synced_calendars: list[EmailStr]
+    # todo turns out the _type has a different model for each. Need to handle that better.
+    identities: list[ConnectedAccountIdentify] = []
+    synced_calendars: dict | list[str] | None = None
     _type: ConnectedAccountTypeEnum
